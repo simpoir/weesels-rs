@@ -1,6 +1,6 @@
 ## Weesels
 
-Weesels is a Weechat relay client written in rust.
+Weesels is a Weechat [relay client](https://weechat.org/files/doc/devel/weechat_relay_protocol.en.html) written in rust.
 
 You probably got here by mistake, but in case not, I suggest you do not rely
 too heavily on it; it is prototype quality at best. It will likely crash,
@@ -35,7 +35,7 @@ It exists because:
 - [x] scroll back history
 - [x] tab completion
 - [ ] nick list
-- [ ] colors
+- [ ] [colors](https://weechat.org/files/doc/devel/weechat_dev.en.html#color_codes_in_strings)
 - [ ] completion cycle/menu or suggest
 - [ ] initial configuration wizard
 - [ ] configurable input bindings
