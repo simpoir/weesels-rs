@@ -41,7 +41,8 @@ It exists because:
 - [ ] configurable input bindings
 - [ ] more tests
 - [x] unencrypted connection (for no certs)
-- [ ] insecure connection (for self-signed certs)
+- [x] insecure connection (for self-signed certs)
+- [ ] nicer fatal errors messages in main (e.g. SSL errors)
 - [ ] reconnections with backoff interval
 - [ ] configurable logging
 - [ ] ui module could use some structure

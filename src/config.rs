@@ -14,9 +14,15 @@ pub struct Conf {
     pub password: String,
     #[serde(default="default_ssl")]
     pub ssl: bool,
+    #[serde(default="default_insecure")]
+    pub insecure: bool,
 }
 
 fn default_ssl() -> bool {
+    false
+}
+
+fn default_insecure() -> bool {
     false
 }
 

@@ -74,7 +74,7 @@ pub struct Wee
 impl Wee
 {
     pub async fn connect(conf: &crate::config::Conf) -> Result<Wee> {
-        let stream = connect(conf.host.as_str(), conf.port, conf.ssl).await.unwrap();
+        let stream = connect(conf.host.as_str(), conf.port, conf.ssl, conf.insecure).await.unwrap();
         let current_buffer = RefCell::new(String::from(""));
         let mut wee = Wee {
             stream,
@@ -364,14 +364,15 @@ impl Wee
     }
 }
 
-async fn connect(host: &str, port: u16, ssl: bool) -> Result<Box<dyn Stream>>
+async fn connect(host: &str, port: u16, ssl: bool, insecure: bool) -> Result<Box<dyn Stream>>
 {
     trace!("creating stream");
     let stream = Async::new(TcpStream::connect((host, port))?)?;
 
     if ssl {
         trace!("doing tls handshake");
-        Ok(Box::new(async_native_tls::connect(host, stream).await?))
+        let connector = async_native_tls::TlsConnector::new().danger_accept_invalid_hostnames(insecure);
+        Ok(Box::new(connector.connect(host, stream).await?))
     } else {Ok(Box::new(stream))}
 }
 

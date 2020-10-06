@@ -141,6 +141,11 @@ async fn run() -> Result<(), Box<dyn Error>> {
     }
     info!("Closing");
     wee.close().await.map_err(Box::new)?;
+
+    // Cleanup any popup on quit.
+    if let Some(n) = notification {
+        n.close();
+    }
     Ok(())
 }
 
