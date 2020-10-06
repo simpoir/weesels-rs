@@ -7,7 +7,7 @@ use notify_rust::NotificationHandle;
 use signal_hook::{SIGINT, SIGWINCH};
 use smol::io::AsyncReadExt;
 use std::error::Error;
-use std::os::unix::io::AsRawFd;
+// use std::os::unix::io::AsRawFd;
 use ui::input::Action;
 
 mod config;
@@ -16,8 +16,8 @@ mod ui;
 mod wee;
 
 fn main() {
-    let log = std::fs::File::create("weesels.log").unwrap();
-    nix::unistd::dup2(log.as_raw_fd(), std::io::stderr().as_raw_fd()).unwrap();
+    // let log = std::fs::File::create("weesels.log").unwrap();
+    // nix::unistd::dup2(log.as_raw_fd(), std::io::stderr().as_raw_fd()).unwrap();
     env_logger::builder()
         .format_timestamp_secs()
         .target(env_logger::Target::Stderr)
@@ -39,7 +39,7 @@ async fn get_input(stdin: &mut smol::fs::File) -> Result<String, Box<dyn Error>>
 async fn run() -> Result<(), Box<dyn Error>> {
     let conf = config::load_default()?;
 
-    let mut wee = wee::Wee::connect(conf.host.as_str(), conf.port, &conf.password).await?;
+    let mut wee = wee::Wee::connect(&conf).await?;
     wee.buffers().await?;
     wee.run().await?; // actually send request
     wee.run().await?; // receive initial buf list

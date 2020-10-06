@@ -1,6 +1,5 @@
 use async_channel::{Receiver, Sender};
-use async_native_tls::TlsStream;
-use futures::{future::FutureExt, select};
+use futures::{future::FutureExt, select, AsyncRead, AsyncWrite};
 use log::{info, trace};
 use smol::{io::AsyncReadExt, io::AsyncWriteExt, Async};
 use std::borrow::Borrow;
@@ -56,12 +55,14 @@ impl std::convert::From<openssl::error::ErrorStack> for Error {
     }
 }
 
-type Stream = TlsStream<Async<TcpStream>>;
+trait Stream: AsyncRead + AsyncWrite + Unpin {}
+impl<T: AsyncRead + AsyncWrite + Unpin> Stream for T {}
 type Result<T> = std::result::Result<T, Error>;
 
 /// Weechat relay client.
-pub struct Wee {
-    stream: Stream,
+pub struct Wee
+{
+    stream: Box<dyn Stream>,
     current_buffer: RefCell<String>,
     bufs: Vec<Buffer>,
     buf_lines: Vec<messages::LineData>,
@@ -70,9 +71,10 @@ pub struct Wee {
     pub is_scrolling: bool,
 }
 
-impl Wee {
-    pub async fn connect(host: &str, port: u16, pass: &str) -> Result<Wee> {
-        let stream = connect(host, port).await.unwrap();
+impl Wee
+{
+    pub async fn connect(conf: &crate::config::Conf) -> Result<Wee> {
+        let stream = connect(conf.host.as_str(), conf.port, conf.ssl).await.unwrap();
         let current_buffer = RefCell::new(String::from(""));
         let mut wee = Wee {
             stream,
@@ -83,7 +85,7 @@ impl Wee {
             is_scrolling: false,
             completion: RefCell::new(None),
         };
-        wee.auth(pass).await?;
+        wee.auth(conf.password.as_str()).await?;
         Ok(wee)
     }
 
@@ -187,10 +189,6 @@ impl Wee {
         select! {
             len = read_u32(&mut self.stream).fuse() => {
                 smol::block_on(self.handle_one(len? as usize))?;
-                while self.stream.buffered_read_size()? > 0 {
-                    let len = smol::block_on(read_u32(&mut self.stream))?;
-                    smol::block_on(self.handle_one(len as usize))?;
-                }
             },
             outgoing = self.send_queue.1.recv().fuse() => {
                 let outgoing = outgoing.expect("Reading send queue");
@@ -366,12 +364,15 @@ impl Wee {
     }
 }
 
-async fn connect(host: &str, port: u16) -> Result<Stream> {
+async fn connect(host: &str, port: u16, ssl: bool) -> Result<Box<dyn Stream>>
+{
     trace!("creating stream");
     let stream = Async::new(TcpStream::connect((host, port))?)?;
 
-    trace!("doing tls handshake");
-    Ok(async_native_tls::connect(host, stream).await?)
+    if ssl {
+        trace!("doing tls handshake");
+        Ok(Box::new(async_native_tls::connect(host, stream).await?))
+    } else {Ok(Box::new(stream))}
 }
 
 async fn read_u32<S>(stream: &mut S) -> Result<u32>

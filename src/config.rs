@@ -12,6 +12,12 @@ pub struct Conf {
     pub host: String,
     pub port: u16,
     pub password: String,
+    #[serde(default="default_ssl")]
+    pub ssl: bool,
+}
+
+fn default_ssl() -> bool {
+    false
 }
 
 pub fn load_default() -> Res<Conf> {

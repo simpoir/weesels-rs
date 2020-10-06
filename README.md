@@ -40,7 +40,7 @@ It exists because:
 - [ ] initial configuration wizard
 - [ ] configurable input bindings
 - [ ] more tests
-- [ ] unencrypted connection (for no certs)
+- [x] unencrypted connection (for no certs)
 - [ ] insecure connection (for self-signed certs)
 - [ ] reconnections with backoff interval
 - [ ] configurable logging

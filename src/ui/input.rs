@@ -77,7 +77,7 @@ impl LineEdit {
             let event = termion::event::parse_event(b, &mut iter);
             match event {
                 Ok(Event::Key(k)) => match k {
-                    Key::Char('\r') => return Action::Input,
+                    Key::Char('\n') => return Action::Input,
                     Key::Alt('\r') => {
                         self.data.insert(self.cursor, '\n');
                         self.cursor += 1;
