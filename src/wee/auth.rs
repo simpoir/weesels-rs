@@ -2,7 +2,7 @@ use super::messages::Handshake;
 use openssl::hash::{Hasher, MessageDigest};
 
 /// A colon-separated list of hash algo supported.
-pub const SUPPORTED_HASHES: &'static str = "plain:sha256:sha512"; // pbkdf2+sha256:pbkdf2+sha512
+pub const SUPPORTED_HASHES: &str = "plain:sha256:sha512"; // XXX missing pbkdf2+sha256:pbkdf2+sha512
 
 pub enum Algo<'a> {
     Plain,

@@ -31,7 +31,7 @@ lint: dev_deps
 
 ## Run all checks.
 .PHONY: check
-check: lint coverage
+check: lint coverage_run
 
 ## Format source code.
 .PHONY: format

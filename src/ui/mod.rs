@@ -1,7 +1,7 @@
 use crate::wee::Wee;
 use input::LineEdit;
 use std::cell::RefCell;
-use termion::raw::IntoRawMode;
+use termion::{raw::IntoRawMode, screen::AlternateScreen};
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -12,7 +12,8 @@ pub mod input;
 
 const SHORTCUT_CHARS: &str = "0123456789qwertyuiop";
 
-type Backend = TermionBackend<termion::raw::RawTerminal<std::io::Stdout>>;
+type RawTerminal = AlternateScreen<termion::raw::RawTerminal<std::io::Stdout>>;
+type Backend = TermionBackend<RawTerminal>;
 
 const BUFLIST_DEFAULT_STYLE: Style = Style {
     bg: Some(Color::Rgb(60, 60, 60)),
@@ -48,7 +49,7 @@ pub struct Ui {
 
 impl Ui {
     pub fn new() -> Self {
-        let stdout = std::io::stdout().into_raw_mode().unwrap();
+        let stdout = AlternateScreen::from(std::io::stdout().into_raw_mode().unwrap());
         let mut tui = tui::Terminal::new(TermionBackend::new(stdout)).unwrap();
         // clear on start, as other changes are incremental
         tui.clear().unwrap();
@@ -260,14 +261,5 @@ impl<'w> View<'w> {
                 ]))
             })
             .collect()
-    }
-}
-
-impl Drop for Ui {
-    fn drop(&mut self) {
-        self.tui
-            .borrow_mut()
-            .clear()
-            .expect("Clearing screen on shutdown");
     }
 }
