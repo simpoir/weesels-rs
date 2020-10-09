@@ -66,7 +66,7 @@ async fn get_input(stdin: &mut smol::fs::File) -> Result<String, Box<dyn Error>>
 }
 
 async fn run(conf: cli::CmdConf) -> Result<(), Box<dyn Error>> {
-    let conf = config::load_default(&conf)?;
+    let conf = config::Loader::new()?.load(&conf)?;
 
     let mut wee = wee::Wee::connect(&conf).await?;
     wee.buffers().await?;

@@ -90,7 +90,6 @@ mod test {
     }
 
     fn not_random(buf: &mut [u8]) -> Result<(), openssl::error::ErrorStack> {
-        println!("{}", buf.len());
         buf.clone_from_slice(b"\xa4\xb7\x32\x07\xf5\xaa\xe4");
         Ok(())
     }

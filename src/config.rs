@@ -1,12 +1,14 @@
 use serde::Deserialize;
-use std::fs::File;
 use std::io::Read;
+use std::{fs::File, path::PathBuf};
 
 use crate::cli::CmdConf;
 use crate::errors::Error;
 use crate::errors::ErrorKind::ConfigError;
 
 type Res<T> = Result<T, Error>;
+
+const CONFIG_FILENAME: &str = "weesels.conf";
 
 #[derive(Deserialize)]
 pub struct Conf {
@@ -27,25 +29,33 @@ fn default_insecure() -> bool {
     false
 }
 
-/// Load config from default path.
-pub fn load_default(cli: &CmdConf) -> Res<Conf> {
-    let default_path;
-    let config = match &cli.config {
-        Some(path) => path,
-        None => {
-            default_path = xdg::BaseDirectories::new()
-                .map_err(|e| Error::from(ConfigError, e))?
-                .find_config_file("weesels.conf")
-                .ok_or_else(|| Error::new(ConfigError))?;
-            &default_path
-        }
-    };
+pub struct Loader {
+    prefix: PathBuf,
+}
 
-    load(config)
+impl Loader {
+    pub fn new() -> Res<Self> {
+        Ok(Self {
+            prefix: xdg::BaseDirectories::new()
+                .map_err(|e| Error::from(ConfigError, e))?
+                .get_config_home(),
+        })
+    }
+    /// Load config from default path.
+    pub fn load(&self, cli: &CmdConf) -> Res<Conf> {
+        let default_path = self.prefix.join(CONFIG_FILENAME);
+        let config_file = cli.config.as_ref().unwrap_or(&default_path);
+
+        if cli.config.is_none() && !config_file.exists() {
+            // conf_wizard()?;
+        }
+
+        load(config_file)
+    }
 }
 
 /// Load config from specific path.
-pub fn load(path: &std::path::Path) -> Res<Conf> {
+fn load(path: &std::path::Path) -> Res<Conf> {
     let mut f = File::open(path).map_err(|e| Error::from(ConfigError, e))?;
     let mut data = String::new();
     f.read_to_string(&mut data)
@@ -56,8 +66,10 @@ pub fn load(path: &std::path::Path) -> Res<Conf> {
 #[cfg(test)]
 mod tests {
 
+    use super::*;
+    use argh::FromArgs;
     use std::io::Write;
-    use tempfile::NamedTempFile;
+    use tempfile::{NamedTempFile, TempDir};
 
     #[test]
     fn test_load() {
@@ -70,5 +82,31 @@ mod tests {
         assert_eq!("some.place", c.host);
         assert_eq!(1235, c.port);
         assert_eq!("flubar", c.password);
+    }
+
+    #[test]
+    fn test_default_path() {
+        let d = TempDir::new().unwrap().into_path();
+        let mut f = std::fs::File::create(d.join(CONFIG_FILENAME)).unwrap();
+        f.write(b"host='some.place'\nport=1235\npassword='flubar'\n")
+            .unwrap();
+
+        let c = CmdConf::from_args(&[], &[]).unwrap();
+        let res = Loader { prefix: d }.load(&c).unwrap();
+        assert_eq!("some.place", res.host);
+    }
+
+    #[test]
+    fn test_load_cmdline() {
+        let d = TempDir::new().unwrap().into_path();
+        let dst = d.join(CONFIG_FILENAME);
+        let mut f = std::fs::File::create(&dst).unwrap();
+        f.write(b"host='some.place'\nport=1235\npassword='flubar'\n")
+            .unwrap();
+
+        let mut c = CmdConf::from_args(&[], &[]).unwrap();
+        c.config = Some(dst);
+        let res = Loader::new().unwrap().load(&c).unwrap();
+        assert_eq!("some.place", res.host);
     }
 }

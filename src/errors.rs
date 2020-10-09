@@ -19,10 +19,6 @@ impl Error {
             source: Some(Box::new(source)),
         }
     }
-
-    pub fn new(kind: ErrorKind) -> Self {
-        Self { kind, source: None }
-    }
 }
 
 impl Display for Error {
